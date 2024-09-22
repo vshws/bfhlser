@@ -1,44 +1,62 @@
 const express = require('express');
 const cors = require('cors');
+const bodyParser = require('body-parser');
 
 const app = express();
 
-// Use CORS middleware
+// Middleware
 app.use(cors());
+app.use(bodyParser.json());
 
-app.use(express.json());
-
+// POST Endpoint - /bfhl
 app.post('/bfhl', (req, res) => {
-  const { data } = req.body;
+  const { data, file_b64 } = req.body;
 
   // Validate that `data` is an array
   if (!Array.isArray(data)) {
     return res.status(400).json({
       is_success: false,
-      message: 'Invalid data format. Data should be an array.'
+      message: 'Invalid data format. Data should be an array.',
     });
   }
 
-  // Filter numbers (convert to strings)
-  const numbers = data.filter(item => !isNaN(item) && item.trim() !== '').map(String);
-
-  // Filter single-character alphabets (case insensitive)
+  // Extract numbers and alphabets
+  const numbers = data.filter(item => !isNaN(item));
   const alphabets = data.filter(item => /^[a-zA-Z]$/.test(item));
+  const highestLowercaseAlphabet = alphabets
+    .filter(item => item === item.toLowerCase())
+    .sort()
+    .pop() || '';
 
-  // Find the highest alphabet (case insensitive)
-  const highestAlphabet = alphabets.sort((a, b) => b.localeCompare(a, undefined, { sensitivity: 'base' })).slice(0, 1);
+  // Handle file validation
+  const fileValid = file_b64 ? true : false;
+  const fileMimeType = fileValid ? 'application/pdf' : ''; // Change based on file type
+  const fileSizeKB = fileValid ? (Buffer.byteLength(file_b64, 'base64') / 1024).toFixed(2) : '';
 
-  // Send the JSON response
+  // Response
   res.json({
     is_success: true,
-    user_id: 'RA2111027010134',
+    user_id: 'vishwas_r_singh_22091998',
+    email: 'vishwas@example.com',
+    roll_number: 'RA2111027010134',
     numbers,
     alphabets,
-    highest_alphabet: highestAlphabet
+    highest_lowercase_alphabet: highestLowercaseAlphabet,
+    file_valid: fileValid,
+    file_mime_type: fileMimeType,
+    file_size_kb: fileSizeKB,
   });
 });
 
-const PORT =5000;
+// GET Endpoint - /bfhl
+app.get('/bfhl', (req, res) => {
+  res.json({
+    operation_code: 1,
+  });
+});
+
+// Start server
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
